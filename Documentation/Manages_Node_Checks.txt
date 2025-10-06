@@ -1,0 +1,100 @@
+login as: root
+Pre-authentication banner message from server:
+| Ubuntu 24.04.3 LTS
+End of banner message from server
+root@9.30.255.29's password:
+Last login: Mon Aug 18 07:45:01 2025 from 10.11.116.237
+root@ansibleManages11:~# sudo systemctl status ssh
+● ssh.service - OpenBSD Secure Shell server
+     Loaded: loaded (/usr/lib/systemd/system/ssh.service; disabled; preset: enabled)
+     Active: active (running) since Sun 2025-10-05 17:06:37 PDT; 1h 57min ago
+TriggeredBy: ● ssh.socket
+       Docs: man:sshd(8)
+             man:sshd_config(5)
+    Process: 1188 ExecStartPre=/usr/sbin/sshd -t (code=exited, status=0/SUCCESS)
+   Main PID: 1191 (sshd)
+      Tasks: 1 (limit: 4605)
+     Memory: 3.0M (peak: 19.4M)
+        CPU: 367ms
+     CGroup: /system.slice/ssh.service
+             └─1191 "sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups"
+
+Oct 05 19:01:39 ansibleManages11.fyre.ibm.com sshd[1864]: Received disconnect from 9.30.166.9 port 35676:1>
+Oct 05 19:01:39 ansibleManages11.fyre.ibm.com sshd[1864]: Disconnected from user root 9.30.166.9 port 35676
+Oct 05 19:01:39 ansibleManages11.fyre.ibm.com sshd[1864]: pam_unix(sshd:session): session closed for user >
+Oct 05 19:01:39 ansibleManages11.fyre.ibm.com sshd[1874]: Accepted password for root from 9.30.166.9 port >
+Oct 05 19:01:39 ansibleManages11.fyre.ibm.com sshd[1874]: pam_unix(sshd:session): session opened for user >
+Oct 05 19:01:39 ansibleManages11.fyre.ibm.com sshd[1874]: Received disconnect from 9.30.166.9 port 35682:1>
+Oct 05 19:01:39 ansibleManages11.fyre.ibm.com sshd[1874]: Disconnected from user root 9.30.166.9 port 35682
+Oct 05 19:01:39 ansibleManages11.fyre.ibm.com sshd[1874]: pam_unix(sshd:session): session closed for user >
+Oct 05 19:02:59 ansibleManages11.fyre.ibm.com sshd[1896]: Accepted password for root from 9.67.156.171 por>
+Oct 05 19:02:59 ansibleManages11.fyre.ibm.com sshd[1896]: pam_unix(sshd:session): session opened for user >
+root@ansibleManages11:~#
+
+root@ansibleManages11:~# ip a | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.11.101.32/20 metric 100 brd 10.11.111.255 scope global dynamic eth0
+    inet 9.30.255.29/21 metric 100 brd 9.30.255.255 scope global dynamic eth1
+
+apicadm@c32624v1:~$ ssh root@9.30.255.29
+The authenticity of host '9.30.255.29 (9.30.255.29)' can't be established.
+ED25519 key fingerprint is SHA256:8aEGDvN/Ic78/jY19rR9pZZTkNJA+xi6TJRnsDVocUY.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? y
+Please type 'yes', 'no' or the fingerprint: yes
+Warning: Permanently added '9.30.255.29' (ED25519) to the list of known hosts.
+Ubuntu 24.04.3 LTS
+root@9.30.255.29's password:
+Last login: Sun Oct  5 19:03:00 2025 from 9.67.156.171
+root@ansibleManages11:~#
+
+***********************************************************************************************
+
+Testing Ansible fron Control to Manages Node:
+
+After configuring ssh-keygen:
+
+root@c32624v1:~# ansible all -i "9.30.255.29," -u root -m ping
+[WARNING]: Platform linux on host 9.30.255.29 is using the discovered Python interpreter at /usr/bin/python3.12, but future installation of another Python interpreter could change the
+meaning of that path. See https://docs.ansible.com/ansible-core/2.17/reference_appendices/interpreter_discovery.html for more information.
+9.30.255.29 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.12"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+
+
+**********************************************************************************************
+
+Configuring SSHKEY for the process:
+
+# ---------- 8. Install sshpass (required if using password authentication) ----------
+sudo apt install sshpass -y
+
+# ---------- 9. (Recommended) Configure key-based authentication ----------
+# Generate SSH key on controller
+ssh-keygen -t ed25519 -C "ansible-controller"
+# Copy the public key to the managed node
+ssh-copy-id root@<MANAGED_NODE_IP>     # or ansible@<IP>
+# Test SSH login (should not ask for a password)
+ssh root@<MANAGED_NODE_IP>
+
+# ========================================================
+# === 10. Test connection with Ansible ===
+# ========================================================
+
+# Quick inline inventory test (note the comma after the IP!)
+ansible all -i "<MANAGED_NODE_IP>," -u root -m ping
+
+# If you prefer to store credentials and use password prompt:
+# ansible all -i "<MANAGED_NODE_IP>," -u root -m ping --ask-pass
+
+# ========================================================
+# === Expected successful output ===
+# ========================================================
+#  <MANAGED_NODE_IP> | SUCCESS => {
+#      "changed": false,
+#      "ping": "pong"
+#  }

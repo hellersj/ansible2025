@@ -1,0 +1,59 @@
+push an existing repository from the command line
+git remote add origin https://github.com/hellersj/ansible2025.git
+git branch -M main
+git push -u origin main
+
+******************************************************
+
+#!/bin/bash
+# ============================================
+# Check and install SSH modules on Ubuntu
+# ============================================
+
+# 1. Update system
+sudo apt update && sudo apt upgrade -y
+
+# -------------------------------------------------
+# 2. Check if the SSH SERVER (openssh-server) is installed
+# -------------------------------------------------
+dpkg -l | grep openssh-server || echo "⚠️  SSH server is not installed."
+
+# Install SSH server if missing
+sudo apt install openssh-server -y
+
+# Check SSH service status
+sudo systemctl status ssh
+
+# Enable and start the service if it’s inactive
+sudo systemctl enable ssh
+sudo systemctl start ssh
+
+# -------------------------------------------------
+# 3. Check if the SSH CLIENT (to connect to other machines) is installed
+# -------------------------------------------------
+ssh -V || echo "⚠️  SSH client is not installed."
+
+# Install SSH client if missing
+sudo apt install openssh-client -y
+
+# -------------------------------------------------
+# 4. Check if the Python SSH module (Paramiko) is installed
+# -------------------------------------------------
+pip3 list | grep paramiko || echo "⚠️  Paramiko module is not installed."
+
+# Install SSH module for Python
+pip3 install paramiko
+
+# Test import in Python (should print confirmation without error)
+python3 -c "import paramiko; print('✅ Paramiko is available')"
+
+# -------------------------------------------------
+# 5. Final summary
+# -------------------------------------------------
+echo ""
+echo "============================================"
+echo "✅ SSH check complete:"
+echo "- SSH server installed and running"
+echo "- SSH client available"
+echo "- Python Paramiko module installed"
+echo "============================================"
